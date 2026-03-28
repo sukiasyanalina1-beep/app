@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "654227279229",
+    "project_id": "recipeapp-ebbfa",
+    "storage_bucket": "recipeapp-ebbfa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:654227279229:android:aad6994ef80d9668715014",
+        "android_client_info": {
+          "package_name": "com.example.recipeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAorGQMP7pJJ67jcvp-rdgjosIOYUHoBCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:654227279229:android:c5141c4a67549031715014",
+        "android_client_info": {
+          "package_name": "com.recipeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAorGQMP7pJJ67jcvp-rdgjosIOYUHoBCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

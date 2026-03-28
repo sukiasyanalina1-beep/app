@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/recipesFragment">
+    <fragment
+        android:id="@+id/favouritesFragment"
+        android:name="com.example.recipeapp.ui.profile.FavouritesFragment"
+        android:label="Favourites"
+        tools:layout="@layout/fragment_favourites" />
+
+    <fragment
+        android:id="@+id/myRecipesFragment"
+        android:name="com.example.recipeapp.ui.profile.MyRecipesFragment"
+        android:label="My Recipes"
+        tools:layout="@layout/fragment_my_recipes" />
+    <fragment
+        android:id="@+id/recipesFragment"
+        android:name="com.example.recipeapp.ui.recipes.RecipesFragment"
+        android:label="Recipes"
+        tools:layout="@layout/fragment_recipes">
+        <action
+            android:id="@+id/action_recipes_to_detail"
+            app:destination="@id/recipeDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/recipeDetailFragment"
+        android:name="com.example.recipeapp.ui.recipes.RecipeDetailFragment"
+        android:label="Recipe"
+        tools:layout="@layout/fragment_recipe_detail">
+        <argument
+            android:name="recipeId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_detail_to_cooking"
+            app:destination="@id/cookingModeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/cookingModeFragment"
+        android:name="com.example.recipeapp.ui.recipes.CookingModeFragment"
+        android:label="Cooking"
+        tools:layout="@layout/fragment_cooking_mode">
+        <argument
+            android:name="recipeId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/shoppingFragment"
+        android:name="com.example.recipeapp.ui.shopping.ShoppingFragment"
+        android:label="Shopping List"
+        tools:layout="@layout/fragment_shopping" />
+
+    <fragment
+        android:id="@+id/blogFragment"
+        android:name="com.example.recipeapp.ui.blog.BlogFragment"
+        android:label="Blog"
+        tools:layout="@layout/fragment_blog">
+        <action
+            android:id="@+id/action_blog_to_post"
+            app:destination="@id/blogPostFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/blogPostFragment"
+        android:name="com.example.recipeapp.ui.blog.BlogPostFragment"
+        android:label="Post"
+        tools:layout="@layout/fragment_blog_post">
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/aiFragment"
+        android:name="com.example.recipeapp.ui.ai.AiFragment"
+        android:label="AI Chef"
+        tools:layout="@layout/fragment_ai" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.recipeapp.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile">
+
+        <action
+            android:id="@+id/action_profile_to_create_recipe"
+            app:destination="@id/createRecipeFragment" />
+
+        <action
+            android:id="@+id/action_profile_to_favourites"
+            app:destination="@id/favouritesFragment" />
+
+        <action
+            android:id="@+id/action_profile_to_my_recipes"
+            app:destination="@id/myRecipesFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/createRecipeFragment"
+        android:name="com.example.recipeapp.ui.recipes.CreateRecipeFragment"
+        android:label="Create Recipe"
+        tools:layout="@layout/fragment_create_recipe" />
+
+</navigation>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.RecipeApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color — warm orange for food -->
+        <item name="colorPrimary">@color/orange_600</item>
+        <item name="colorPrimaryVariant">@color/orange_800</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorOnSecondary">@color/black</item>
+    </style>
+</resources>
