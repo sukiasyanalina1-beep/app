@@ -8,13 +8,21 @@
         android:id="@+id/favouritesFragment"
         android:name="com.example.recipeapp.ui.profile.FavouritesFragment"
         android:label="Favourites"
-        tools:layout="@layout/fragment_favourites" />
+        tools:layout="@layout/fragment_favourites">
+        <action
+            android:id="@+id/action_favourites_to_detail"
+            app:destination="@id/recipeDetailFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/myRecipesFragment"
         android:name="com.example.recipeapp.ui.profile.MyRecipesFragment"
         android:label="My Recipes"
-        tools:layout="@layout/fragment_my_recipes" />
+        tools:layout="@layout/fragment_my_recipes">
+        <action
+            android:id="@+id/action_my_recipes_to_detail"
+            app:destination="@id/recipeDetailFragment" />
+    </fragment>
     <fragment
         android:id="@+id/recipesFragment"
         android:name="com.example.recipeapp.ui.recipes.RecipesFragment"
@@ -62,6 +70,9 @@
         <action
             android:id="@+id/action_blog_to_post"
             app:destination="@id/blogPostFragment" />
+        <action
+            android:id="@+id/action_blog_to_create"
+            app:destination="@id/createBlogPostFragment" />
     </fragment>
 
     <fragment
@@ -73,6 +84,12 @@
             android:name="postId"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/createBlogPostFragment"
+        android:name="com.example.recipeapp.ui.blog.CreateBlogPostFragment"
+        android:label="New Post"
+        tools:layout="@layout/fragment_create_blog_post" />
 
     <fragment
         android:id="@+id/aiFragment"

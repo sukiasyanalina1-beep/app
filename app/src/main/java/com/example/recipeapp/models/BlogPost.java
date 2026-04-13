@@ -26,6 +26,10 @@ public class BlogPost {
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
+    private java.util.List<String> likedBy = new java.util.ArrayList<>();
+    public java.util.List<String> getLikedBy() { return likedBy != null ? likedBy : new java.util.ArrayList<>(); }
+    public void setLikedBy(java.util.List<String> likedBy) { this.likedBy = likedBy; }
+
     public String getExcerpt() {
         if (content == null) return "";
         return content.length() > 120 ? content.substring(0, 120) + "…" : content;

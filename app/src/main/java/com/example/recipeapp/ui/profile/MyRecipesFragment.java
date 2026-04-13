@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.*;
 import androidx.annotation.*;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
@@ -36,14 +35,14 @@ public class MyRecipesFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("recipeId", recipe.getId());
             androidx.navigation.Navigation.findNavController(requireView())
-                    .navigate(R.id.action_recipes_to_detail, args);
+                    .navigate(R.id.action_my_recipes_to_detail, args);
         });
 
         binding.rvMyRecipes.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         binding.rvMyRecipes.setAdapter(adapter);
 
         binding.btnBack.setOnClickListener(v ->
-                requireActivity().onBackPressed());
+                requireActivity().getOnBackPressedDispatcher().onBackPressed());
 
         binding.btnCreate.setOnClickListener(v -> {
             androidx.navigation.NavController nav =
@@ -51,9 +50,12 @@ public class MyRecipesFragment extends Fragment {
                             requireActivity(), R.id.nav_host_fragment);
             nav.navigate(R.id.createRecipeFragment);
         });
+
+        loadMyRecipes();
     }
 
     private void loadMyRecipes() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         binding.progressBar.setVisibility(View.VISIBLE);
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 

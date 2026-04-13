@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.auth.*;
 import com.google.firebase.firestore.*;
 import com.google.firebase.storage.FirebaseStorage;
+import com.example.recipeapp.BuildConfig;
 import com.example.recipeapp.R;
 import com.example.recipeapp.databinding.FragmentProfileBinding;
 import com.example.recipeapp.ui.auth.EquipmentSetupActivity;
@@ -62,6 +63,7 @@ public class ProfileFragment extends Fragment {
     // ── Profile data ──────────────────────────────────────────────────────────
 
     private void loadUserProfile() {
+        if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
@@ -145,22 +147,22 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private static final String CLOUDINARY_CLOUD_NAME = "dz6tnsytr";
-    private static final String CLOUDINARY_API_KEY = "973825689523746";
-    private static final String CLOUDINARY_API_SECRET = "973825689523746";
     private static final String CLOUDINARY_UPLOAD_URL =
-            "https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/image/upload";
+            "https://api.cloudinary.com/v1_1/" + BuildConfig.CLOUDINARY_CLOUD_NAME + "/image/upload";
 
     private void uploadAvatar(Uri imageUri) {
+        if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
         Toast.makeText(requireContext(), "Uploading...", Toast.LENGTH_SHORT).show();
 
         new Thread(() -> {
             try {
                 // Read image bytes
-                java.io.InputStream inputStream =
-                        requireContext().getContentResolver().openInputStream(imageUri);
-                byte[] imageBytes = readBytes(inputStream);
+                byte[] imageBytes;
+                try (java.io.InputStream inputStream =
+                             requireContext().getContentResolver().openInputStream(imageUri)) {
+                    imageBytes = readBytes(inputStream);
+                }
 
                 // Build multipart request
                 String boundary = "----FormBoundary" + System.currentTimeMillis();
@@ -180,14 +182,15 @@ public class ProfileFragment extends Fragment {
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"upload_preset\"")
                         .append("\r\n\r\n");
-                writer.append("ml_default").append("\r\n");
+                writer.append(BuildConfig.CLOUDINARY_UPLOAD_PRESET).append("\r\n");
                 writer.flush();
 
-                // Add public_id field
+                // Use unique public_id per upload so Cloudinary returns a fresh URL
+                // (avoids Glide serving the stale cached image on re-upload)
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"public_id\"")
                         .append("\r\n\r\n");
-                writer.append("avatars/" + uid).append("\r\n");
+                writer.append("avatars/" + uid + "_" + System.currentTimeMillis()).append("\r\n");
                 writer.flush();
 
                 // Add image file
@@ -240,6 +243,8 @@ public class ProfileFragment extends Fragment {
                                 Glide.with(requireContext())
                                         .load(imageUrl)
                                         .circleCrop()
+                                        .skipMemoryCache(true)
+                                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
                                         .into(binding.ivAvatar);
                                 Toast.makeText(requireContext(),
                                         "Avatar updated!", Toast.LENGTH_SHORT).show();
@@ -248,10 +253,13 @@ public class ProfileFragment extends Fragment {
 
             } catch (Exception e) {
                 android.util.Log.e("Upload", "Failed: " + e.getMessage());
-                requireActivity().runOnUiThread(() ->
-                        Toast.makeText(requireContext(),
-                                "Upload failed: " + e.getMessage(),
-                                Toast.LENGTH_LONG).show());
+                if (!isAdded() || getActivity() == null) return;
+                requireActivity().runOnUiThread(() -> {
+                    if (!isAdded() || getActivity() == null || binding == null) return;
+                    Toast.makeText(requireContext(),
+                            "Upload failed: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
             }
         }).start();
     }
@@ -345,7 +353,7 @@ public class ProfileFragment extends Fragment {
                 .setView(input)
                 .setPositiveButton("Save", (d, w) -> {
                     String newName = input.getText().toString().trim();
-                    if (newName.isEmpty()) return;
+                    if (newName.isEmpty() || auth.getCurrentUser() == null) return;
                     String uid = auth.getCurrentUser().getUid();
                     db.collection("users").document(uid)
                             .update("displayName", newName)
@@ -364,6 +372,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void showChangePasswordDialog() {
+        if (auth.getCurrentUser() == null) return;
         String email = auth.getCurrentUser().getEmail();
         new AlertDialog.Builder(requireContext())
                 .setTitle("Change password")
@@ -401,6 +410,7 @@ public class ProfileFragment extends Fragment {
                 .setMessage("This will permanently delete your account and all " +
                         "your recipes. This cannot be undone.")
                 .setPositiveButton("Delete", (d, w) -> {
+                    if (auth.getCurrentUser() == null) return;
                     String uid = auth.getCurrentUser().getUid();
                     db.collection("users").document(uid).delete();
                     auth.getCurrentUser().delete()

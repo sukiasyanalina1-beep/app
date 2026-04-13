@@ -36,8 +36,7 @@
                         android:layout_height="88dp"
                         android:background="@drawable/bg_avatar_circle"
                         android:src="@drawable/ic_profile"
-                        android:padding="18dp"
-                        android:scaleType="centerCrop"
+                        android:scaleType="center"
                         android:clickable="true"
                         android:focusable="true"/>
 

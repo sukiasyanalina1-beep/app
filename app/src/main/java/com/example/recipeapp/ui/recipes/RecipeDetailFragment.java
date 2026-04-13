@@ -37,9 +37,13 @@ public class RecipeDetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         db = FirebaseFirestore.getInstance();
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        String recipeId = getArguments().getString("recipeId");
+        Bundle args = getArguments();
+        if (args == null) return;
+        String recipeId = args.getString("recipeId");
+        if (recipeId == null) return;
         loadRecipe(recipeId);
     }
 
@@ -127,23 +131,32 @@ public class RecipeDetailFragment extends Fragment {
                 .addOnSuccessListener(userDoc -> {
                     String userName = userDoc.getString("displayName");
                     if (userName == null) userName = "";
-                    String familyId = userDoc.getString("familyId");
 
-                    if (familyId == null) {
+                    // Use first group in groupIds (or fall back to old familyId)
+                    List<String> groupIds = (List<String>) userDoc.get("groupIds");
+                    String groupId = null;
+                    if (groupIds != null && !groupIds.isEmpty()) {
+                        groupId = groupIds.get(0);
+                    } else {
+                        groupId = userDoc.getString("familyId");
+                    }
+
+                    if (groupId == null) {
                         com.google.android.material.snackbar.Snackbar.make(
                                 requireView(),
-                                "No family list found. Please set up your shopping list first.",
-                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+                                "No shopping group found. Go to Shopping to create one.",
+                                com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
                         return;
                     }
 
+                    final String finalGroupId = groupId;
                     final String finalUserName = userName;
                     for (String ingredient : currentRecipe.getIngredients()) {
                         com.example.recipeapp.models.ShoppingItem item =
                                 new com.example.recipeapp.models.ShoppingItem(
                                         ingredient, currentUserId, finalUserName);
-                        db.collection("families")
-                                .document(familyId)
+                        db.collection("groups")
+                                .document(finalGroupId)
                                 .collection("shoppingItems")
                                 .add(item);
                     }

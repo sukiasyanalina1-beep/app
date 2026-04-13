@@ -35,24 +35,26 @@ public class FavouritesFragment extends Fragment {
             Bundle args = new Bundle();
             args.putString("recipeId", recipe.getId());
             androidx.navigation.Navigation.findNavController(requireView())
-                    .navigate(R.id.action_recipes_to_detail, args);
+                    .navigate(R.id.action_favourites_to_detail, args);
         });
 
         binding.rvFavourites.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         binding.rvFavourites.setAdapter(adapter);
         binding.btnBack.setOnClickListener(v ->
-                requireActivity().onBackPressed());
+                requireActivity().getOnBackPressedDispatcher().onBackPressed());
 
         loadFavourites();
     }
 
     private void loadFavourites() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         binding.progressBar.setVisibility(View.VISIBLE);
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
+                    if (binding == null) return;
                     List<String> favIds = (List<String>) doc.get("favouriteRecipeIds");
                     if (favIds == null || favIds.isEmpty()) {
                         binding.progressBar.setVisibility(View.GONE);
@@ -63,10 +65,12 @@ public class FavouritesFragment extends Fragment {
                             .whereIn(FieldPath.documentId(), favIds)
                             .get()
                             .addOnSuccessListener(snap -> {
+                                if (binding == null) return;
                                 binding.progressBar.setVisibility(View.GONE);
                                 List<Recipe> list = new ArrayList<>();
                                 for (QueryDocumentSnapshot d : snap) {
                                     Recipe r = d.toObject(Recipe.class);
+                                    if (r == null) continue;
                                     r.setId(d.getId());
                                     list.add(r);
                                 }

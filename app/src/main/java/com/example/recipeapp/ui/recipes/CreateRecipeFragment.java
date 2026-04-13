@@ -4,8 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.*;
+import android.view.inputmethod.EditorInfo;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.*;
@@ -16,9 +20,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
+import com.example.recipeapp.BuildConfig;
 import com.example.recipeapp.databinding.FragmentCreateRecipeBinding;
 import com.example.recipeapp.models.Recipe;
 import java.util.*;
+import java.util.HashMap;
 
 public class CreateRecipeFragment extends Fragment {
 
@@ -30,16 +36,11 @@ public class CreateRecipeFragment extends Fragment {
 
     private final List<String> ingredientList = new ArrayList<>();
     private final List<String> stepList = new ArrayList<>();
-    private final Set<String> selectedEquipment = new HashSet<>();
+    private final Set<String> selectedEquipment = new LinkedHashSet<>();
+    private final Set<String> firestoreEquipmentKeys = new HashSet<>(); // for new-item detection
 
     private static final String[] MEAL_TYPES = {
             "Breakfast", "Lunch", "Dinner", "Dessert", "Snack"
-    };
-
-    private static final String[] EQUIPMENT_LIST = {
-            "Oven", "Stovetop", "Blender", "Air fryer",
-            "Microwave", "Grill", "Slow cooker", "Rice cooker",
-            "Food processor", "Steamer", "No equipment"
     };
 
     private String selectedMealType = null;
@@ -57,8 +58,12 @@ public class CreateRecipeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Resize layout above keyboard so inline suggestions stay visible
+        requireActivity().getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
         setupMealTypeChips();
-        setupEquipmentChips();
+        setupEquipmentInput();
         setupIngredientInput();
         setupStepInput();
         setupImagePicker();
@@ -121,37 +126,129 @@ public class CreateRecipeFragment extends Fragment {
         }
     }
 
-    // ── Equipment chips ───────────────────────────────────────────────────────
+    // ── Equipment input ───────────────────────────────────────────────────────
 
-    private void setupEquipmentChips() {
-        // Try loading from Firestore first
+    private final List<String> equipmentSuggestions = new ArrayList<>();
+
+    private void setupEquipmentInput() {
+        // Load Firestore equipment for suggestions and new-item tracking
         FirebaseFirestore.getInstance().collection("equipment")
+                .orderBy("name")
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    if (!snapshot.isEmpty()) {
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            String name = doc.getString("name");
-                            if (name != null) addEquipmentChip(name);
+                    if (binding == null) return;
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        String name = doc.getString("name");
+                        if (name != null) {
+                            equipmentSuggestions.add(name);
+                            firestoreEquipmentKeys.add(name.toLowerCase());
                         }
-                    } else {
-                        // Fallback to hardcoded list
-                        for (String item : EQUIPMENT_LIST) addEquipmentChip(item);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    for (String item : EQUIPMENT_LIST) addEquipmentChip(item);
                 });
+
+        // Live suggestions as user types
+        binding.etEquipmentInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int i, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                showEquipmentSuggestions(s.toString().trim());
+            }
+        });
+
+        // Add button — free text allowed
+        binding.btnAddEquipment.setOnClickListener(v -> tryAddEquipmentFromInput());
+
+        // Keyboard Done — free text allowed
+        binding.etEquipmentInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                tryAddEquipmentFromInput();
+                return true;
+            }
+            return false;
+        });
     }
 
-    private void addEquipmentChip(String name) {
+    private void showEquipmentSuggestions(String query) {
+        binding.chipGroupEquipmentSuggestions.removeAllViews();
+
+        if (query.isEmpty()) {
+            hideEquipmentSuggestions();
+            return;
+        }
+
+        List<String> matches = new ArrayList<>();
+        for (String name : equipmentSuggestions) {
+            if (name.toLowerCase().contains(query.toLowerCase())
+                    && !selectedEquipment.contains(name.toLowerCase())) {
+                matches.add(name);
+                if (matches.size() == 10) break;
+            }
+        }
+
+        if (matches.isEmpty()) {
+            hideEquipmentSuggestions();
+            return;
+        }
+
+        for (String name : matches) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(name);
+            chip.setCheckable(false);
+            chip.setOnClickListener(v -> {
+                addEquipmentTag(name);
+                binding.etEquipmentInput.setText("");
+                hideEquipmentSuggestions();
+            });
+            binding.chipGroupEquipmentSuggestions.addView(chip);
+        }
+
+        binding.chipGroupEquipmentSuggestions.setVisibility(View.VISIBLE);
+        binding.tvEquipmentSuggestionsLabel.setVisibility(View.VISIBLE);
+    }
+
+    private void hideEquipmentSuggestions() {
+        binding.chipGroupEquipmentSuggestions.setVisibility(View.GONE);
+        binding.tvEquipmentSuggestionsLabel.setVisibility(View.GONE);
+    }
+
+    private void tryAddEquipmentFromInput() {
+        String text = binding.etEquipmentInput.getText().toString().trim();
+        if (text.isEmpty()) return;
+        addEquipmentTag(text);
+        binding.etEquipmentInput.setText("");
+        hideEquipmentSuggestions();
+    }
+
+    private void addEquipmentTag(String name) {
+        String key = name.toLowerCase();
+        if (selectedEquipment.contains(key)) return;
+        selectedEquipment.add(key);
+
         Chip chip = new Chip(requireContext());
         chip.setText(name);
-        chip.setCheckable(true);
-        chip.setOnCheckedChangeListener((btn, isChecked) -> {
-            if (isChecked) selectedEquipment.add(name.toLowerCase());
-            else selectedEquipment.remove(name.toLowerCase());
+        chip.setCloseIconVisible(true);
+        chip.setCheckable(false);
+        chip.setOnCloseIconClickListener(v -> {
+            selectedEquipment.remove(key);
+            binding.chipGroupEquipment.removeView(chip);
         });
         binding.chipGroupEquipment.addView(chip);
+    }
+
+    /** Save any equipment item that doesn't yet exist in Firestore. */
+    private void saveNewEquipmentToFirestore() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        for (String key : selectedEquipment) {
+            if (!firestoreEquipmentKeys.contains(key)) {
+                // Capitalize first letter for display
+                String display = key.substring(0, 1).toUpperCase() + key.substring(1);
+                Map<String, Object> doc = new HashMap<>();
+                doc.put("name", display);
+                db.collection("equipment").add(doc);
+            }
+        }
     }
 
     // ── Ingredient input ──────────────────────────────────────────────────────
@@ -273,9 +370,8 @@ public class CreateRecipeFragment extends Fragment {
         }
     }
 
-    private static final String CLOUDINARY_CLOUD_NAME = "dz6tnsytr";
     private static final String CLOUDINARY_UPLOAD_URL =
-            "https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/image/upload";
+            "https://api.cloudinary.com/v1_1/" + BuildConfig.CLOUDINARY_CLOUD_NAME + "/image/upload";
 
     private void uploadImageThenSave(String title, String description,
                                      int prep, int cook, int servings) {
@@ -284,10 +380,12 @@ public class CreateRecipeFragment extends Fragment {
                 String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
                 // Read image bytes
-                java.io.InputStream inputStream =
-                        requireContext().getContentResolver()
-                                .openInputStream(selectedImageUri);
-                byte[] imageBytes = readBytes(inputStream);
+                byte[] imageBytes;
+                try (java.io.InputStream inputStream =
+                             requireContext().getContentResolver()
+                                     .openInputStream(selectedImageUri)) {
+                    imageBytes = readBytes(inputStream);
+                }
 
                 // Build multipart request
                 String boundary = "----FormBoundary" + System.currentTimeMillis();
@@ -307,7 +405,7 @@ public class CreateRecipeFragment extends Fragment {
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"upload_preset\"")
                         .append("\r\n\r\n");
-                writer.append("ml_default").append("\r\n");
+                writer.append(BuildConfig.CLOUDINARY_UPLOAD_PRESET).append("\r\n");
                 writer.flush();
 
                 // Public ID
@@ -413,6 +511,9 @@ public class CreateRecipeFragment extends Fragment {
     private void saveRecipe(String title, String description,
                             int prep, int cook, int servings,
                             String imageUrl) {
+        // Persist any brand-new equipment to the shared Firestore list
+        saveNewEquipmentToFirestore();
+
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         FirebaseFirestore.getInstance()
@@ -459,6 +560,9 @@ public class CreateRecipeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Restore default soft input mode for other fragments
+        requireActivity().getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         binding = null;
     }
 }

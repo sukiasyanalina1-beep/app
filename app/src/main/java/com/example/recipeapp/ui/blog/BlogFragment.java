@@ -17,6 +17,7 @@ public class BlogFragment extends Fragment {
     private FragmentBlogBinding binding;
     private BlogAdapter adapter;
     private FirebaseFirestore db;
+    private ListenerRegistration postsListener;
 
     @Nullable
     @Override
@@ -42,14 +43,23 @@ public class BlogFragment extends Fragment {
         binding.rvBlog.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvBlog.setAdapter(adapter);
 
-        loadPosts();
+        binding.fabWrite.setOnClickListener(v ->
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_blog_to_create));
+
+        listenToPosts();
     }
 
-    private void loadPosts() {
-        db.collection("blog")
+    private void listenToPosts() {
+        binding.progressBar.setVisibility(View.VISIBLE);
+
+        postsListener = db.collection("blog")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(snap -> {
+                .addSnapshotListener((snap, e) -> {
+                    if (binding == null) return;
+                    binding.progressBar.setVisibility(View.GONE);
+                    if (snap == null) return;
+
                     List<BlogPost> posts = new ArrayList<>();
                     for (QueryDocumentSnapshot d : snap) {
                         BlogPost p = d.toObject(BlogPost.class);
@@ -64,6 +74,7 @@ public class BlogFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (postsListener != null) postsListener.remove();
         binding = null;
     }
 }

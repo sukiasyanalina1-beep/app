@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.recipeapp.adapters.ChatAdapter;
 import com.example.recipeapp.databinding.FragmentAiBinding;
 import com.example.recipeapp.models.ChatMessage;
+import com.example.recipeapp.BuildConfig;
 import org.json.*;
 import okhttp3.*;
 import java.io.IOException;
@@ -20,13 +21,9 @@ public class AiFragment extends Fragment {
 
     private static final String TAG = "AiFragment";
 
-    // ── Paste your Gemini API key here ──────────────────────
-    private static final String GEMINI_API_KEY = "AIzaSyA4ozusm6YcdZ--bUzaROhCQ_cpz_WRj_s";
-    // ────────────────────────────────────────────────────────
-
     private static final String API_URL =
             "https://generativelanguage.googleapis.com/v1/models/" +
-                    "gemini-2.0-flash-lite:generateContent?key=" + GEMINI_API_KEY;
+                    "gemini-2.0-flash-lite:generateContent?key=" + BuildConfig.GEMINI_API_KEY;
     private static final String SYSTEM_PROMPT =
             "You are a helpful cooking assistant called AI Chef. " +
                     "Help users with recipes, ingredient substitutions, cooking techniques, " +

@@ -48,11 +48,48 @@
             android:visibility="gone"
             android:layout_marginBottom="8dp"/>
 
+        <!-- Selected equipment as removable chips -->
         <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupEquipment"
+            android:id="@+id/chipGroupSelected"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp"/>
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Search input (full width, no Add button — must pick from suggestions) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilEquipment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search equipment…"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEquipment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords"
+                android:imeOptions="actionDone"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Inline suggestions — appear while typing, hidden otherwise -->
+        <TextView
+            android:id="@+id/tvSuggestionsLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap to add:"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"/>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupSuggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:visibility="gone"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveEquipment"

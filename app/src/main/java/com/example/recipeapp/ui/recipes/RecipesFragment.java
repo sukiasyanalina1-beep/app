@@ -55,11 +55,7 @@ public class RecipesFragment extends Fragment {
         setupRecyclerView();
         setupMealTypeChips();
         setupIngredientSearch();
-
-        // Step 1: load user equipment from Firestore
-        // Step 2: inside that callback, load recipes
-        // Step 3: inside that callback, apply filters
-        // This guarantees the correct order
+        restoreIngredientChips();
         loadUserEquipmentThenRecipes();
     }
 
@@ -80,6 +76,8 @@ public class RecipesFragment extends Fragment {
             Chip chip = new Chip(requireContext());
             chip.setText(type);
             chip.setCheckable(true);
+            // Restore checked state before attaching listener to avoid spurious callbacks
+            chip.setChecked(type.toLowerCase().equals(selectedMealType));
             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
                     // Uncheck all siblings
@@ -144,7 +142,7 @@ public class RecipesFragment extends Fragment {
                     Set<String> unique = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
                     for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
                         Recipe r = doc.toObject(Recipe.class);
-                        if (r.getIngredients() != null) unique.addAll(r.getIngredients());
+                        if (r != null && r.getIngredients() != null) unique.addAll(r.getIngredients());
                     }
                     availableIngredients = new ArrayList<>(unique);
                     ArrayAdapter<String> autoAdapter = new ArrayAdapter<>(
@@ -166,7 +164,12 @@ public class RecipesFragment extends Fragment {
     private void addIngredientTag(String ingredient) {
         if (selectedIngredients.contains(ingredient.toLowerCase())) return;
         selectedIngredients.add(ingredient.toLowerCase());
+        addIngredientChipView(ingredient);
+        applyFilters();
+    }
 
+    /** Adds only the chip view — used when restoring state after view recreation. */
+    private void addIngredientChipView(String ingredient) {
         Chip chip = new Chip(requireContext());
         chip.setText(ingredient);
         chip.setCloseIconVisible(true);
@@ -177,7 +180,13 @@ public class RecipesFragment extends Fragment {
             applyFilters();
         });
         binding.chipGroupIngredients.addView(chip);
-        applyFilters();
+    }
+
+    /** Re-creates ingredient chip views from the surviving selectedIngredients set. */
+    private void restoreIngredientChips() {
+        for (String ing : new ArrayList<>(selectedIngredients)) {
+            addIngredientChipView(ing);
+        }
     }
 
     // ── The key method — loads in the correct order ──────────────────────────
@@ -222,11 +231,13 @@ public class RecipesFragment extends Fragment {
                     recipes.isEmpty() ? View.VISIBLE : View.GONE);
         });
 
-        // Load recipes — when done, immediately apply filters
-        viewModel.loadRecipes(() -> {
-            android.util.Log.d("RecipesFragment", "Recipes loaded, applying filters...");
+        // Skip Firestore fetch if recipes are already in the ViewModel (returning from navigation)
+        List<Recipe> existing = viewModel.getAllRecipes().getValue();
+        if (existing != null && !existing.isEmpty()) {
             applyFilters();
-        });
+        } else {
+            viewModel.loadRecipes(() -> applyFilters());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

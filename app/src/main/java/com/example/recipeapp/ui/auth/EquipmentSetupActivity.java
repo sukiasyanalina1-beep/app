@@ -2,7 +2,10 @@ package com.example.recipeapp.ui.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.chip.Chip;
@@ -16,8 +19,10 @@ import java.util.*;
 public class EquipmentSetupActivity extends AppCompatActivity {
 
     private ActivityEquipmentSetupBinding binding;
-    private final Set<String> selectedEquipment = new HashSet<>();
+    private final Set<String> selectedEquipment = new LinkedHashSet<>();
     private final List<String> availableEquipment = new ArrayList<>();
+    /** Saved keys from Firestore — held separately so chips can be created after list loads. */
+    private final List<String> savedEquipmentKeys = new ArrayList<>();
     private FirebaseFirestore db;
     private String uid;
     private boolean isEditing = false;
@@ -31,9 +36,7 @@ public class EquipmentSetupActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // Check if coming from profile (editing) or from registration
         isEditing = getIntent().getBooleanExtra("isEditing", false);
-
         if (isEditing) {
             binding.tvTitle.setText("Edit your equipment");
             binding.tvSubtitle.setText("Update the equipment available in your kitchen.");
@@ -45,22 +48,21 @@ public class EquipmentSetupActivity extends AppCompatActivity {
         binding.btnSaveEquipment.setEnabled(false);
 
         loadUserEquipmentThenLoadList();
+        setupSearchInput();
 
         binding.btnSaveEquipment.setOnClickListener(v -> saveEquipment());
         binding.btnSkip.setOnClickListener(v -> goToMain());
     }
 
+    // ── Data loading ──────────────────────────────────────────────────────────
+
     private void loadUserEquipmentThenLoadList() {
-        // First load user's saved equipment
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
                     List<String> saved = (List<String>) doc.get("equipment");
                     if (saved != null) {
-                        for (String e : saved) {
-                            selectedEquipment.add(e.toLowerCase());
-                        }
+                        for (String e : saved) savedEquipmentKeys.add(e.toLowerCase());
                     }
-                    // Then load the full equipment list from Firestore
                     loadEquipmentList();
                 })
                 .addOnFailureListener(e -> loadEquipmentList());
@@ -76,40 +78,135 @@ public class EquipmentSetupActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot doc : snapshot) {
                         String name = doc.getString("name");
-                        if (name != null) {
-                            availableEquipment.add(name);
-                            addChip(name);
-                        }
+                        if (name != null) availableEquipment.add(name);
+                    }
+
+                    // Pre-populate chips for already-saved equipment.
+                    // selectedEquipment is still empty here — addSelectedChip fills it.
+                    for (String savedKey : savedEquipmentKeys) {
+                        String display = findDisplayName(savedKey);
+                        addSelectedChip(display != null ? display : savedKey);
                     }
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.btnSaveEquipment.setEnabled(true);
                     Toast.makeText(this,
                             "Failed to load equipment list", Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void addChip(String name) {
-        Chip chip = new Chip(this);
-        chip.setText(name);
-        chip.setCheckable(true);
+    // ── Search input with inline suggestions ─────────────────────────────────
 
-        // Pre-select if user already has this equipment
-        boolean isSelected = selectedEquipment.contains(name.toLowerCase());
-        chip.setChecked(isSelected);
+    private void setupSearchInput() {
+        binding.etEquipment.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
 
-        chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) selectedEquipment.add(name.toLowerCase());
-            else selectedEquipment.remove(name.toLowerCase());
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                showSuggestions(s.toString().trim());
+            }
         });
 
-        binding.chipGroupEquipment.addView(chip);
+        binding.etEquipment.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                String text = binding.etEquipment.getText().toString().trim();
+                String match = findDisplayName(text.toLowerCase());
+                if (match != null) {
+                    addSelectedChip(match);
+                    binding.etEquipment.setText("");
+                } else if (!text.isEmpty()) {
+                    binding.tilEquipment.setError("Not found — pick from suggestions");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        binding.etEquipment.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) hideSuggestions();
+        });
     }
+
+    private void showSuggestions(String query) {
+        binding.chipGroupSuggestions.removeAllViews();
+
+        if (query.isEmpty()) {
+            hideSuggestions();
+            binding.tilEquipment.setError(null);
+            return;
+        }
+
+        binding.tilEquipment.setError(null);
+        List<String> matches = new ArrayList<>();
+        for (String name : availableEquipment) {
+            if (name.toLowerCase().contains(query.toLowerCase())
+                    && !selectedEquipment.contains(name.toLowerCase())) {
+                matches.add(name);
+                if (matches.size() == 10) break; // cap at 10 suggestions
+            }
+        }
+
+        if (matches.isEmpty()) {
+            hideSuggestions();
+            return;
+        }
+
+        for (String name : matches) {
+            Chip chip = new Chip(this);
+            chip.setText(name);
+            chip.setCheckable(false);
+            chip.setOnClickListener(v -> {
+                addSelectedChip(name);
+                binding.etEquipment.setText("");
+                hideSuggestions();
+            });
+            binding.chipGroupSuggestions.addView(chip);
+        }
+
+        binding.chipGroupSuggestions.setVisibility(View.VISIBLE);
+        binding.tvSuggestionsLabel.setVisibility(View.VISIBLE);
+    }
+
+    private void hideSuggestions() {
+        binding.chipGroupSuggestions.setVisibility(View.GONE);
+        binding.tvSuggestionsLabel.setVisibility(View.GONE);
+    }
+
+    // ── Selected chips ────────────────────────────────────────────────────────
+
+    private void addSelectedChip(String displayName) {
+        String key = displayName.toLowerCase();
+        if (selectedEquipment.contains(key)) return;
+        selectedEquipment.add(key);
+
+        Chip chip = new Chip(this);
+        chip.setText(displayName);
+        chip.setCloseIconVisible(true);
+        chip.setCheckable(false);
+        chip.setOnCloseIconClickListener(v -> {
+            selectedEquipment.remove(key);
+            binding.chipGroupSelected.removeView(chip);
+        });
+        binding.chipGroupSelected.addView(chip);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private String findDisplayName(String lowerKey) {
+        for (String name : availableEquipment) {
+            if (name.toLowerCase().equals(lowerKey)) return name;
+        }
+        return null;
+    }
+
+    // ── Save ──────────────────────────────────────────────────────────────────
 
     private void saveEquipment() {
         if (selectedEquipment.isEmpty()) {
             Toast.makeText(this,
-                    "Please select at least one equipment", Toast.LENGTH_SHORT).show();
+                    "Please add at least one piece of equipment", Toast.LENGTH_SHORT).show();
             return;
         }
 

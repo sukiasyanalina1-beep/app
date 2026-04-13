@@ -364,11 +364,64 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
 
+            <!-- Selected equipment as removable chips -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupEquipment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"/>
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Input + Add button (free text allowed) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="e.g. Oven, Air fryer…"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEquipmentInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapWords"
+                        android:imeOptions="actionDone"/>
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddEquipment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="Add"
+                    style="@style/Widget.MaterialComponents.Button"/>
+
+            </LinearLayout>
+
+            <!-- Inline suggestions — appear while typing -->
+            <TextView
+                android:id="@+id/tvEquipmentSuggestionsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Suggestions (tap to add):"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="4dp"
+                android:visibility="gone"/>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupEquipmentSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone"/>
 
             <!-- Publish button -->
             <com.google.android.material.button.MaterialButton

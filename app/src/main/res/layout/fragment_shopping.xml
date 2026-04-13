@@ -3,94 +3,287 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
-    <!-- Header -->
+    <!-- ── Header ──────────────────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
         android:background="?attr/colorPrimaryContainer"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Shopping List"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp"/>
-
+        <!-- Top row: label + My Groups button -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="4dp">
 
             <TextView
-                android:id="@+id/tvFamilyCode"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textSize="13sp"
-                android:textColor="?attr/colorOnSurfaceVariant"/>
+                android:text="SHOPPING"
+                android:textSize="11sp"
+                android:letterSpacing="0.12"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnPrimaryContainer"/>
 
-            <TextView
-                android:id="@+id/tvMemberCount"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnManageGroups"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="?attr/colorOnSurfaceVariant"/>
+                android:text="My Groups"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
         </LinearLayout>
 
-        <!-- Family action buttons -->
+        <!-- Group name row (hidden when no groups) -->
         <LinearLayout
+            android:id="@+id/activeGroupRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <!-- Group name row – tap to expand/collapse details -->
+            <LinearLayout
+                android:id="@+id/btnSwitchGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:padding="4dp"
+                android:layout_marginStart="-4dp">
+
+                <TextView
+                    android:id="@+id/tvGroupName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+
+                <TextView
+                    android:id="@+id/tvDropdownArrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  ▾"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+
+            </LinearLayout>
+
+            <!-- Collapsible details panel -->
+            <LinearLayout
+                android:id="@+id/groupDetailsPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Member bubbles row -->
+                <HorizontalScrollView
+                    android:id="@+id/membersScrollView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/llMemberBubbles"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"/>
+
+                </HorizontalScrollView>
+
+                <!-- Action buttons row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="4dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewMembers"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Members"
+                        android:textSize="12sp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnInvite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Invite"
+                        android:textSize="12sp"
+                        android:layout_marginStart="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <TextView
+                        android:id="@+id/tvMemberCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:visibility="gone"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnShareInvite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- No-group state inside header -->
+        <LinearLayout
+            android:id="@+id/headerNoGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="14dp"
+            android:visibility="gone">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnInvite"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Invite member"
-                android:layout_marginEnd="4dp"
-                android:textSize="12sp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnJoinFamily"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Join family"
-                android:layout_marginStart="4dp"
-                android:textSize="12sp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                android:text="No group selected"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
 
         </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Stats bar -->
+    <!-- ── Pending invitations banner ─────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/invitationBanner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:background="#FFF3E0"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tvInvitationCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="13sp"
+            android:text="📨 You have pending invitations"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewInvitations"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View →"
+            android:textSize="12sp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+    </LinearLayout>
+
+    <!-- ── Filter chips ────────────────────────────────────────────────────── -->
+    <HorizontalScrollView
+        android:id="@+id/filterBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/invitationBanner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All"
+                android:checkable="true"
+                android:checked="true"
+                style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPending"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="To Buy"
+                android:checkable="true"
+                style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipDone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Done"
+                android:checkable="true"
+                style="@style/Widget.MaterialComponents.Chip.Filter"/>
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </HorizontalScrollView>
+
+    <!-- ── Stats bar ───────────────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/statsBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="4dp"
         android:gravity="center_vertical"
-        app:layout_constraintTop_toBottomOf="@id/header"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/filterBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -99,7 +292,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textColor="?attr/colorOnSurfaceVariant"/>
 
         <com.google.android.material.button.MaterialButton
@@ -112,40 +305,97 @@
 
     </LinearLayout>
 
-    <!-- List -->
+    <!-- ── Shopping list ───────────────────────────────────────────────────── -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvShoppingList"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:paddingBottom="8dp"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/statsBar"
         app:layout_constraintBottom_toTopOf="@id/addItemBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
-        android:id="@+id/tvEmptyState"
+        android:id="@+id/tvEmptyList"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Your list is empty — add something!"
+        android:text="Nothing here yet — add your first item!"
         android:gravity="center"
-        android:padding="32dp"
-        android:visibility="gone"
+        android:padding="40dp"
+        android:textSize="14sp"
         android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/statsBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Add item bar -->
+    <!-- ── No-groups empty state ───────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/emptyNoGroups"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛒"
+            android:textSize="56sp"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No shopping groups yet"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create a group to start shopping together,\nor join one using an invite code."
+            android:textSize="14sp"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="24dp"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateFirstGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create group"
+                style="@style/Widget.MaterialComponents.Button"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ── Add item bar ────────────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/addItemBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="12dp"
-        android:elevation="4dp"
+        android:elevation="8dp"
         android:background="?attr/colorSurface"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -155,7 +405,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Add item…"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
             android:layout_marginEnd="8dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -175,5 +425,16 @@
             style="@style/Widget.MaterialComponents.Button"/>
 
     </LinearLayout>
+
+    <!-- Loading indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

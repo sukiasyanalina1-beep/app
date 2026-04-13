@@ -17,6 +17,7 @@ public class RecipesViewModel extends ViewModel {
     private final MutableLiveData<List<Recipe>> filteredRecipes = new MutableLiveData<>(new ArrayList<>());
 
     public LiveData<List<Recipe>> getFilteredRecipes() { return filteredRecipes; }
+    public LiveData<List<Recipe>> getAllRecipes() { return allRecipes; }
 
     // Callback interface
     public interface OnRecipesLoaded {
@@ -30,6 +31,7 @@ public class RecipesViewModel extends ViewModel {
                     List<Recipe> list = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : snapshot) {
                         Recipe r = doc.toObject(Recipe.class);
+                        if (r == null) continue;
                         r.setId(doc.getId());
                         list.add(r);
                     }

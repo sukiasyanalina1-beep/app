@@ -15,8 +15,11 @@ public class AuthActivity extends AppCompatActivity {
         FirebaseAuth auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() != null && auth.getCurrentUser().isEmailVerified()) {
-            // Already logged in — go straight to app
-            startActivity(new Intent(this, MainActivity.class));
+            // Already logged in — go straight to app, forwarding any deep link
+            Intent intent = new Intent(this, MainActivity.class);
+            if (getIntent() != null && getIntent().getData() != null)
+                intent.setData(getIntent().getData());
+            startActivity(intent);
         } else {
             // Not logged in — go to login page
             startActivity(new Intent(this, LoginActivity.class));

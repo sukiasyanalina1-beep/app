@@ -1,7 +1,13 @@
+import java.util.Properties
 
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
+}
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
 }
 
 android {
@@ -15,11 +21,13 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField(
-            "String",
-            "GEMINI_API_KEY",
-            "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\""
-        )
+        buildConfigField("String", "GEMINI_API_KEY",
+            "\"${localProps["GEMINI_API_KEY"] ?: ""}\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME",
+            "\"${localProps["CLOUDINARY_CLOUD_NAME"] ?: ""}\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET",
+            "\"${localProps["CLOUDINARY_UPLOAD_PRESET"] ?: ""}\"")
+
     }
 
     buildTypes {
