@@ -33,7 +33,7 @@
         <FrameLayout
             android:id="@+id/frameImagePicker"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="@dimen/recipe_image_picker_height"
             android:background="#FFE0B2"
             android:clickable="true"
             android:focusable="true"
@@ -91,7 +91,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingStart="@dimen/form_h_padding"
+            android:paddingEnd="@dimen/form_h_padding"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
 
             <!-- Title -->
             <TextView

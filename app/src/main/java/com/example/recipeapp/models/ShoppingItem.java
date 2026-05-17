@@ -6,6 +6,7 @@ public class ShoppingItem {
     private boolean checked;
     private String addedByUserId;
     private String addedByName;
+    private String checkedByName;
     private String category;
     private int quantity;
     private String unit;
@@ -34,6 +35,8 @@ public class ShoppingItem {
     public void setAddedByUserId(String addedByUserId) { this.addedByUserId = addedByUserId; }
     public String getAddedByName() { return addedByName; }
     public void setAddedByName(String addedByName) { this.addedByName = addedByName; }
+    public String getCheckedByName() { return checkedByName; }
+    public void setCheckedByName(String checkedByName) { this.checkedByName = checkedByName; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     public int getQuantity() { return quantity; }

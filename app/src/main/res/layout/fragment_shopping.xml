@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="20dp"
+            android:paddingStart="@dimen/form_h_padding"
             android:paddingEnd="12dp"
             android:paddingTop="16dp"
             android:paddingBottom="4dp">
@@ -54,7 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="20dp"
+            android:paddingStart="@dimen/form_h_padding"
             android:paddingEnd="12dp"
             android:paddingBottom="12dp"
             android:visibility="gone">
@@ -169,7 +169,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="20dp"
+            android:paddingStart="@dimen/form_h_padding"
             android:paddingEnd="12dp"
             android:paddingBottom="14dp"
             android:visibility="gone">
@@ -192,7 +192,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
+        android:paddingStart="@dimen/form_h_padding"
         android:paddingEnd="8dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
@@ -220,90 +220,67 @@
 
     </LinearLayout>
 
-    <!-- ── Filter chips ────────────────────────────────────────────────────── -->
-    <HorizontalScrollView
-        android:id="@+id/filterBar"
+    <!-- ── Tab bar: To Buy | Done ─────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/tabBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="@dimen/form_h_padding"
+        android:paddingEnd="@dimen/form_h_padding"
+        android:paddingTop="10dp"
+        android:paddingBottom="6dp"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/invitationBanner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupFilter"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleTabs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:singleSelection="true"
             app:selectionRequired="true">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="All"
-                android:checkable="true"
-                android:checked="true"
-                style="@style/Widget.MaterialComponents.Chip.Filter"/>
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipPending"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTabToBuy"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="To Buy"
-                android:checkable="true"
-                style="@style/Widget.MaterialComponents.Chip.Filter"/>
+                android:textSize="13sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipDone"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTabDone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Done"
-                android:checkable="true"
-                style="@style/Widget.MaterialComponents.Chip.Filter"/>
+                android:textSize="13sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
-        </com.google.android.material.chip.ChipGroup>
-
-    </HorizontalScrollView>
-
-    <!-- ── Stats bar ───────────────────────────────────────────────────────── -->
-    <LinearLayout
-        android:id="@+id/statsBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="4dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="4dp"
-        android:gravity="center_vertical"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/filterBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <TextView
             android:id="@+id/tvItemCount"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="end"
             android:textSize="12sp"
             android:textColor="?attr/colorOnSurfaceVariant"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnClearChecked"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Clear done"
-            android:textSize="12sp"
-            style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
     </LinearLayout>
+
+    <!-- ── Stats bar (kept as invisible anchor for constraints) ──────────── -->
+    <View
+        android:id="@+id/statsBar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tabBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- ── Shopping list ───────────────────────────────────────────────────── -->
     <androidx.recyclerview.widget.RecyclerView
@@ -311,9 +288,11 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
+        android:paddingStart="@dimen/form_h_padding"
+        android:paddingEnd="@dimen/form_h_padding"
         android:paddingBottom="8dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/statsBar"
+        app:layout_constraintTop_toBottomOf="@id/tabBar"
         app:layout_constraintBottom_toTopOf="@id/addItemBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -328,7 +307,7 @@
         android:textSize="14sp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/statsBar"
+        app:layout_constraintTop_toBottomOf="@id/tabBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -392,7 +371,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:paddingStart="@dimen/form_h_padding"
+        android:paddingEnd="@dimen/form_h_padding"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:elevation="8dp"
         android:background="?attr/colorSurface"
         android:visibility="gone"

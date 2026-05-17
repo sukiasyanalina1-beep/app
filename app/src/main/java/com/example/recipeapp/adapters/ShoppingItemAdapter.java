@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.*;
 import com.example.recipeapp.databinding.ItemShoppingBinding;
 import com.example.recipeapp.models.ShoppingItem;
+import java.util.Objects;
 
 public class ShoppingItemAdapter extends ListAdapter<ShoppingItem, ShoppingItemAdapter.ViewHolder> {
 
@@ -29,8 +30,11 @@ public class ShoppingItemAdapter extends ListAdapter<ShoppingItem, ShoppingItemA
                 }
                 @Override
                 public boolean areContentsTheSame(@NonNull ShoppingItem a, @NonNull ShoppingItem b) {
-                    return a.getName().equals(b.getName()) &&
-                            a.isChecked() == b.isChecked();
+                    boolean sameName    = Objects.equals(a.getName(), b.getName());
+                    boolean sameChecked = a.isChecked() == b.isChecked();
+                    String ac = a.getCheckedByName(); String bc = b.getCheckedByName();
+                    boolean sameChecker = (ac == null ? bc == null : ac.equals(bc));
+                    return sameName && sameChecked && sameChecker;
                 }
             };
 
@@ -57,26 +61,38 @@ public class ShoppingItemAdapter extends ListAdapter<ShoppingItem, ShoppingItemA
         void bind(ShoppingItem item) {
             binding.tvItemName.setText(item.getName());
 
-            // Show who added it
-            String addedBy = item.getAddedByName();
-            if (addedBy != null && !addedBy.isEmpty()) {
-                binding.tvAddedBy.setText("Added by " + addedBy);
+            if (item.isChecked()) {
+                String checker = item.getCheckedByName();
+                binding.tvAddedBy.setText((checker != null && !checker.isEmpty())
+                        ? "Done by " + checker : "Done");
                 binding.tvAddedBy.setVisibility(View.VISIBLE);
             } else {
-                binding.tvAddedBy.setVisibility(View.GONE);
+                String addedBy = item.getAddedByName();
+                if (addedBy != null && !addedBy.isEmpty()) {
+                    binding.tvAddedBy.setText("Added by " + addedBy);
+                    binding.tvAddedBy.setVisibility(View.VISIBLE);
+                } else {
+                    binding.tvAddedBy.setVisibility(View.GONE);
+                }
             }
 
-            binding.cbChecked.setChecked(item.isChecked());
+            if (item.isChecked()) {
+                // Done tab: hide checkbox, item is view-only
+                binding.cbChecked.setVisibility(View.GONE);
+                binding.tvItemName.setPaintFlags(
+                        binding.tvItemName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                binding.tvItemName.setAlpha(0.4f);
+                binding.tvAddedBy.setAlpha(0.4f);
+            } else {
+                binding.cbChecked.setVisibility(View.VISIBLE);
+                binding.cbChecked.setChecked(false);
+                binding.tvItemName.setPaintFlags(
+                        binding.tvItemName.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
+                binding.tvItemName.setAlpha(1f);
+                binding.tvAddedBy.setAlpha(1f);
+                binding.cbChecked.setOnClickListener(v -> onToggle.onToggle(item));
+            }
 
-            // Strike through when checked
-            int flags = item.isChecked()
-                    ? binding.tvItemName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG
-                    : binding.tvItemName.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG;
-            binding.tvItemName.setPaintFlags(flags);
-            binding.tvItemName.setAlpha(item.isChecked() ? 0.4f : 1f);
-            binding.tvAddedBy.setAlpha(item.isChecked() ? 0.4f : 1f);
-
-            binding.cbChecked.setOnClickListener(v -> onToggle.onToggle(item));
             binding.btnDelete.setOnClickListener(v -> onDelete.onDelete(item));
         }
     }

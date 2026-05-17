@@ -13,7 +13,6 @@ import androidx.annotation.*;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
@@ -46,9 +45,11 @@ public class ShoppingFragment extends Fragment {
     // Pending invitations
     private final List<Invitation> pendingInvitations = new ArrayList<>();
 
-    // All items (unfiltered) from the live listener
+    // All items from the live listener
     private final List<ShoppingItem> allShoppingItems = new ArrayList<>();
-    private String currentFilter = "all";
+
+    // Active tab: "toBuy" or "done"
+    private String currentTab = "toBuy";
 
     // Dropdown state
     private boolean groupDetailsExpanded = false;
@@ -57,10 +58,6 @@ public class ShoppingFragment extends Fragment {
     // Firestore listeners
     private ListenerRegistration shoppingListener;
     private ListenerRegistration invitationListener;
-
-    // Undo-on-done
-    private final Handler deletionHandler = new Handler(Looper.getMainLooper());
-    private final Map<String, Runnable> pendingDeletions = new HashMap<>();
 
     // Member bubble colors
     private static final int[] MEMBER_COLORS = {
@@ -113,8 +110,6 @@ public class ShoppingFragment extends Fragment {
         super.onDestroyView();
         if (shoppingListener != null) shoppingListener.remove();
         if (invitationListener != null) invitationListener.remove();
-        for (Runnable r : pendingDeletions.values()) deletionHandler.removeCallbacks(r);
-        pendingDeletions.clear();
         binding = null;
     }
 
@@ -140,8 +135,13 @@ public class ShoppingFragment extends Fragment {
             return true;
         });
 
-        // Stats bar
-        binding.btnClearChecked.setOnClickListener(v -> clearCheckedItems());
+        // Tab buttons
+        binding.toggleTabs.check(binding.btnTabToBuy.getId());
+        binding.toggleTabs.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            currentTab = (checkedId == binding.btnTabDone.getId()) ? "done" : "toBuy";
+            applyFilter();
+        });
 
         // Header actions
         binding.btnManageGroups.setOnClickListener(v -> showGroupManager());
@@ -155,16 +155,6 @@ public class ShoppingFragment extends Fragment {
         // Empty state - create first group
         binding.btnCreateFirstGroup.setOnClickListener(v -> showCreateGroupDialog());
 
-        // Filter chips
-        binding.chipGroupFilter.setOnCheckedStateChangeListener(
-                (group, checkedIds) -> {
-                    if (checkedIds.isEmpty()) return;
-                    int id = checkedIds.get(0);
-                    if (id == binding.chipPending.getId()) currentFilter = "pending";
-                    else if (id == binding.chipDone.getId()) currentFilter = "done";
-                    else currentFilter = "all";
-                    applyFilter();
-                });
     }
 
     // ── Data loading ──────────────────────────────────────────────────────────
@@ -266,8 +256,7 @@ public class ShoppingFragment extends Fragment {
         if (binding == null) return;
         binding.activeGroupRow.setVisibility(View.GONE);
         binding.headerNoGroup.setVisibility(View.VISIBLE);
-        binding.filterBar.setVisibility(View.GONE);
-        binding.statsBar.setVisibility(View.GONE);
+        binding.tabBar.setVisibility(View.GONE);
         binding.rvShoppingList.setVisibility(View.GONE);
         binding.tvEmptyList.setVisibility(View.GONE);
         binding.addItemBar.setVisibility(View.GONE);
@@ -278,8 +267,7 @@ public class ShoppingFragment extends Fragment {
         if (binding == null) return;
         binding.headerNoGroup.setVisibility(View.GONE);
         binding.activeGroupRow.setVisibility(View.VISIBLE);
-        binding.filterBar.setVisibility(View.VISIBLE);
-        binding.statsBar.setVisibility(View.VISIBLE);
+        binding.tabBar.setVisibility(View.VISIBLE);
         binding.rvShoppingList.setVisibility(View.VISIBLE);
         binding.addItemBar.setVisibility(View.VISIBLE);
         binding.emptyNoGroups.setVisibility(View.GONE);
@@ -742,23 +730,29 @@ public class ShoppingFragment extends Fragment {
 
     private void applyFilter() {
         if (binding == null) return;
+
+        long toBuyCount = 0, doneCount = 0;
         List<ShoppingItem> filtered = new ArrayList<>();
         for (ShoppingItem item : allShoppingItems) {
-            if ("pending".equals(currentFilter) && item.isChecked()) continue;
-            if ("done".equals(currentFilter) && !item.isChecked()) continue;
-            filtered.add(item);
+            if (item.isChecked()) {
+                doneCount++;
+                if ("done".equals(currentTab)) filtered.add(item);
+            } else {
+                toBuyCount++;
+                if ("toBuy".equals(currentTab)) filtered.add(item);
+            }
         }
+
         adapter.submitList(filtered);
 
-        long total = allShoppingItems.size();
-        long done = 0;
-        for (ShoppingItem i : allShoppingItems) if (i.isChecked()) done++;
-        long pending = total - done;
+        binding.btnTabToBuy.setText("To Buy (" + toBuyCount + ")");
+        binding.btnTabDone.setText("Done (" + doneCount + ")");
 
-        binding.chipAll.setText("All (" + total + ")");
-        binding.chipPending.setText("To Buy (" + pending + ")");
-        binding.chipDone.setText("Done (" + done + ")");
-        binding.tvItemCount.setText(total + " items · " + done + " done");
+        if ("toBuy".equals(currentTab)) {
+            binding.tvEmptyList.setText("Nothing to buy — add your first item!");
+        } else {
+            binding.tvEmptyList.setText("No done items yet");
+        }
         binding.tvEmptyList.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
@@ -774,40 +768,26 @@ public class ShoppingFragment extends Fragment {
     private void toggleItem(ShoppingItem item) {
         if (currentGroupId == null) return;
         boolean nowChecked = !item.isChecked();
-        db.collection("groups").document(currentGroupId)
-                .collection("shoppingItems").document(item.getId())
-                .update("checked", nowChecked);
         if (nowChecked) {
+            db.collection("groups").document(currentGroupId)
+                    .collection("shoppingItems").document(item.getId())
+                    .update("checked", true, "checkedByName", currentUserName);
             showUndoSnackbar(item);
         } else {
-            Runnable pending = pendingDeletions.remove(item.getId());
-            if (pending != null) deletionHandler.removeCallbacks(pending);
+            db.collection("groups").document(currentGroupId)
+                    .collection("shoppingItems").document(item.getId())
+                    .update("checked", false, "checkedByName", "");
         }
     }
 
     private void showUndoSnackbar(ShoppingItem item) {
-        Runnable existing = pendingDeletions.remove(item.getId());
-        if (existing != null) deletionHandler.removeCallbacks(existing);
-
-        Runnable deletion = () -> {
-            pendingDeletions.remove(item.getId());
-            if (currentGroupId != null)
-                db.collection("groups").document(currentGroupId)
-                        .collection("shoppingItems").document(item.getId()).delete();
-        };
-        pendingDeletions.put(item.getId(), deletion);
-        deletionHandler.postDelayed(deletion, 5000);
-
-        Snackbar.make(binding.getRoot(),
-                        "\"" + item.getName() + "\" done", 5000)
+        Snackbar.make(binding.getRoot(), "\"" + item.getName() + "\" marked as done", 5000)
                 .setAnchorView(binding.addItemBar)
                 .setAction("Undo", v -> {
-                    Runnable pending = pendingDeletions.remove(item.getId());
-                    if (pending != null) deletionHandler.removeCallbacks(pending);
-                    if (currentGroupId != null)
-                        db.collection("groups").document(currentGroupId)
-                                .collection("shoppingItems").document(item.getId())
-                                .update("checked", false);
+                    if (currentGroupId == null) return;
+                    db.collection("groups").document(currentGroupId)
+                            .collection("shoppingItems").document(item.getId())
+                            .update("checked", false, "checkedByName", "");
                 })
                 .show();
     }
@@ -825,25 +805,6 @@ public class ShoppingFragment extends Fragment {
         if (currentGroupId == null) return;
         db.collection("groups").document(currentGroupId)
                 .collection("shoppingItems").document(item.getId()).delete();
-    }
-
-    private void clearCheckedItems() {
-        if (currentGroupId == null) return;
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Clear checked items")
-                .setMessage("Remove all done items from the list?")
-                .setPositiveButton("Clear", (d, w) ->
-                        db.collection("groups").document(currentGroupId)
-                                .collection("shoppingItems")
-                                .whereEqualTo("checked", true).get()
-                                .addOnSuccessListener(snap -> {
-                                    WriteBatch batch = db.batch();
-                                    for (QueryDocumentSnapshot doc : snap)
-                                        batch.delete(doc.getReference());
-                                    batch.commit();
-                                }))
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     // ── Group management ──────────────────────────────────────────────────────

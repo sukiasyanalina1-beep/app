@@ -5,7 +5,9 @@ import android.text.TextUtils;
 import android.view.*;
 import android.widget.*;
 import androidx.annotation.*;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.*;
@@ -101,6 +103,13 @@ public class BlogPostFragment extends Fragment {
 
         // Like state
         updateLikeUI(post);
+
+        // Show delete button only to the post author
+        boolean isAuthor = currentUserId != null && currentUserId.equals(post.getAuthorId());
+        binding.btnDeletePost.setVisibility(isAuthor ? View.VISIBLE : View.GONE);
+        if (isAuthor) {
+            binding.btnDeletePost.setOnClickListener(v -> confirmDelete());
+        }
     }
 
     private void updateLikeUI(BlogPost post) {
@@ -192,6 +201,49 @@ public class BlogPostFragment extends Fragment {
                         if (binding != null) binding.etComment.setText("");
                     });
         });
+    }
+
+    private void confirmDelete() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete post?")
+                .setMessage("This will permanently remove the post and all its comments.")
+                .setPositiveButton("Delete", (d, w) -> deletePost())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deletePost() {
+        if (binding == null) return;
+        binding.btnDeletePost.setEnabled(false);
+
+        // Delete comments subcollection first, then the post document
+        db.collection("blog").document(postId).collection("comments").get()
+                .addOnSuccessListener(snap -> {
+                    WriteBatch batch = db.batch();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        batch.delete(doc.getReference());
+                    }
+                    batch.delete(db.collection("blog").document(postId));
+                    batch.commit()
+                            .addOnSuccessListener(v -> {
+                                if (!isAdded()) return;
+                                Toast.makeText(requireContext(),
+                                        "Post deleted", Toast.LENGTH_SHORT).show();
+                                Navigation.findNavController(requireView()).popBackStack();
+                            })
+                            .addOnFailureListener(e -> {
+                                if (binding != null) binding.btnDeletePost.setEnabled(true);
+                                Toast.makeText(requireContext(),
+                                        "Failed to delete: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (binding != null) binding.btnDeletePost.setEnabled(true);
+                    Toast.makeText(requireContext(),
+                            "Failed to delete: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
     }
 
     private int readingTime(String content) {

@@ -22,8 +22,8 @@ public class AiFragment extends Fragment {
     private static final String TAG = "AiFragment";
 
     private static final String API_URL =
-            "https://generativelanguage.googleapis.com/v1/models/" +
-                    "gemini-2.0-flash-lite:generateContent?key=" + BuildConfig.GEMINI_API_KEY;
+            "https://generativelanguage.googleapis.com/v1beta/models/" +
+                    "gemini-2.5-flash:generateContent?key=" + BuildConfig.GEMINI_API_KEY;
     private static final String SYSTEM_PROMPT =
             "You are a helpful cooking assistant called AI Chef. " +
                     "Help users with recipes, ingredient substitutions, cooking techniques, " +

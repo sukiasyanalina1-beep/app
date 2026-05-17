@@ -14,7 +14,7 @@
         <!-- ── Hero header ─────────────────────────────────────── -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="@dimen/profile_hero_height"
             android:background="?attr/colorPrimaryContainer">
 
             <LinearLayout
@@ -26,14 +26,14 @@
 
                 <!-- Avatar -->
                 <FrameLayout
-                    android:layout_width="88dp"
-                    android:layout_height="88dp"
+                    android:layout_width="@dimen/avatar_size"
+                    android:layout_height="@dimen/avatar_size"
                     android:layout_marginBottom="12dp">
 
                     <ImageView
                         android:id="@+id/ivAvatar"
-                        android:layout_width="88dp"
-                        android:layout_height="88dp"
+                        android:layout_width="@dimen/avatar_size"
+                        android:layout_height="@dimen/avatar_size"
                         android:background="@drawable/bg_avatar_circle"
                         android:src="@drawable/ic_profile"
                         android:scaleType="center"
@@ -43,8 +43,8 @@
                     <!-- Edit badge -->
                     <FrameLayout
                         android:id="@+id/ivEditAvatar"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
+                        android:layout_width="@dimen/avatar_edit_badge_size"
+                        android:layout_height="@dimen/avatar_edit_badge_size"
                         android:layout_gravity="bottom|end"
                         android:background="?attr/colorPrimary"
                         android:clickable="true"

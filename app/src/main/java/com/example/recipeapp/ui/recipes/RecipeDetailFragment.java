@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.recipeapp.R;
+import com.example.recipeapp.data.MealDbService;
 import com.example.recipeapp.databinding.FragmentRecipeDetailBinding;
 import com.example.recipeapp.models.Recipe;
 
@@ -48,26 +49,54 @@ public class RecipeDetailFragment extends Fragment {
     }
 
     private void loadRecipe(String recipeId) {
-        db.collection("recipes").document(recipeId).get()
-                .addOnSuccessListener(doc -> {
-                    currentRecipe = doc.toObject(Recipe.class);
-                    if (currentRecipe == null) return;
-                    currentRecipe.setId(doc.getId());
+        if (recipeId.startsWith("mealdb_")) {
+            // TheMealDB recipe — fetch full details from the API
+            String mealId = recipeId.substring(7); // strip "mealdb_" prefix
+            new MealDbService().loadMealDetail(mealId, recipes -> {
+                if (binding == null) return;
+                if (!recipes.isEmpty()) {
+                    currentRecipe = recipes.get(0);
                     populateUI();
-                });
+                }
+            });
+        } else {
+            // User-created recipe — load from Firestore
+            db.collection("recipes").document(recipeId).get()
+                    .addOnSuccessListener(doc -> {
+                        currentRecipe = doc.toObject(Recipe.class);
+                        if (currentRecipe == null) return;
+                        currentRecipe.setId(doc.getId());
+                        populateUI();
+                    });
+        }
     }
 
     private void populateUI() {
-        binding.tvTitle.setText(currentRecipe.getTitle());
-        binding.tvDescription.setText(currentRecipe.getDescription());
-        binding.tvAuthor.setText("By " + currentRecipe.getAuthorName());
-        binding.tvPrepTime.setText(currentRecipe.getPrepTimeMinutes() + " min prep");
-        binding.tvCookTime.setText(currentRecipe.getCookTimeMinutes() + " min cook");
-        binding.tvServings.setText(currentRecipe.getServings() + " servings");
+        boolean isMealDb = "mealdb".equals(currentRecipe.getAuthorId());
 
-        if (currentRecipe.getImageUrl() != null) {
-            Glide.with(this).load(currentRecipe.getImageUrl())
-                    .centerCrop().into(binding.ivRecipeImage);
+        binding.tvTitle.setText(currentRecipe.getTitle());
+
+        String desc = currentRecipe.getDescription();
+        if (desc != null && !desc.isEmpty()) {
+            binding.tvDescription.setText(desc);
+            binding.tvDescription.setVisibility(View.VISIBLE);
+        } else {
+            binding.tvDescription.setVisibility(View.GONE);
+        }
+
+        String author = currentRecipe.getAuthorName();
+        binding.tvAuthor.setText("By " + (author != null ? author : "Unknown"));
+
+        int prep = currentRecipe.getPrepTimeMinutes();
+        int cook = currentRecipe.getCookTimeMinutes();
+        binding.tvPrepTime.setText(prep > 0 ? prep + " min prep" : "– min prep");
+        binding.tvCookTime.setText(cook > 0 ? cook + " min cook" : "– min cook");
+        int servings = currentRecipe.getServings();
+        binding.tvServings.setText((servings > 0 ? servings : 4) + " servings");
+
+        String imageUrl = currentRecipe.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this).load(imageUrl).centerCrop().into(binding.ivRecipeImage);
         }
 
         // Ingredients
@@ -79,19 +108,19 @@ public class RecipeDetailFragment extends Fragment {
         }
         binding.tvIngredients.setText(ingredients.toString().trim());
 
-        // Check if already favourited
+        // "Start Cooking" uses Firestore — hide it for TheMealDB recipes
+        binding.btnStartCooking.setVisibility(isMealDb ? View.GONE : View.VISIBLE);
+        if (!isMealDb) {
+            binding.btnStartCooking.setOnClickListener(v -> {
+                Bundle args = new Bundle();
+                args.putString("recipeId", currentRecipe.getId());
+                Navigation.findNavController(requireView())
+                        .navigate(R.id.action_detail_to_cooking, args);
+            });
+        }
+
         checkFavouriteStatus();
-
         binding.fabFavourite.setOnClickListener(v -> toggleFavourite());
-
-        binding.btnStartCooking.setOnClickListener(v -> {
-            Bundle args = new Bundle();
-            args.putString("recipeId", currentRecipe.getId());
-            Navigation.findNavController(requireView())
-                    .navigate(R.id.action_detail_to_cooking, args);
-        });
-
-        // Add to shopping list button
         binding.btnAddToShopping.setOnClickListener(v -> addIngredientsToShoppingList());
     }
 

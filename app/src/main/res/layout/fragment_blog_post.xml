@@ -42,9 +42,9 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- Like row -->
+            <!-- Like + delete row -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
@@ -61,11 +61,21 @@
 
                 <TextView
                     android:id="@+id/tvLikeCount"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:textSize="14sp"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:layout_marginStart="2dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDeletePost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
             </LinearLayout>
 
