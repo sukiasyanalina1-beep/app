@@ -98,7 +98,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
             @Override
             public void onReadyForSpeech(Bundle params) {
                 isListening = true;
-                updateVoiceStatus("🎤 Listening... say \"next\", \"back\" or \"repeat\"");
+                updateVoiceStatus("🎤 Listening... say \"next\", \"previous\", \"back\" or \"repeat\"");
             }
 
             @Override public void onBeginningOfSpeech() {}
@@ -110,7 +110,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
             public void onError(int error) {
                 isListening = false;
                 if (!isSpeaking && binding != null) {
-                    updateVoiceStatus("🎤 Say \"next\", \"back\" or \"repeat\"");
+                    updateVoiceStatus("🎤 Say \"next\", \"previous\", \"back\" or \"repeat\"");
                     restartListeningDelayed();
                 }
             }
@@ -132,7 +132,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
             @Override public void onEvent(int eventType, Bundle params) {}
         });
 
-        updateVoiceStatus("🎤 Say \"next\", \"back\" or \"repeat\"");
+        updateVoiceStatus("🎤 Say \"next\", \"previous\", \"back\" or \"repeat\"");
         // Start listening right away if TTS isn't speaking yet
         restartListeningDelayed();
     }
@@ -142,7 +142,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.ENGLISH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
         intent.putExtra(
                 RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L);
@@ -180,7 +180,10 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
                 return;
             }
 
-            if (lower.contains("back") || lower.contains("previous") || lower.contains("prev")) {
+            if (lower.contains("back") || lower.contains("previous") || lower.contains("prev")
+                    || lower.contains("go back") || lower.contains("last step")
+                    || lower.contains("before") || lower.contains("return")
+                    || lower.contains("undo") || lower.contains("backward")) {
                 requireActivity().runOnUiThread(() -> {
                     if (currentStep > 0) {
                         stopSpeaking();
@@ -311,7 +314,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
                     updateSpeakButton(false);
                     // Resume listening once TTS is done
                     if (speechRecognizer != null && binding != null) {
-                        updateVoiceStatus("🎤 Say \"next\", \"back\" or \"repeat\"");
+                        updateVoiceStatus("🎤 Say \"next\", \"previous\", \"back\" or \"repeat\"");
                         startListening();
                     }
                 });
@@ -324,7 +327,7 @@ public class CookingModeFragment extends Fragment implements TextToSpeech.OnInit
                     isSpeaking = false;
                     updateSpeakButton(false);
                     if (speechRecognizer != null && binding != null) {
-                        updateVoiceStatus("🎤 Say \"next\", \"back\" or \"repeat\"");
+                        updateVoiceStatus("🎤 Say \"next\", \"previous\", \"back\" or \"repeat\"");
                         startListening();
                     }
                 });

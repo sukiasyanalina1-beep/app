@@ -56,7 +56,7 @@ public class ProfileFragment extends Fragment {
         loadUserProfile();
         setupContentRows();
         setupSettings();
-        setupAccountRows();
+
         setupAvatar();
     }
 
@@ -314,28 +314,9 @@ public class ProfileFragment extends Fragment {
 
         // Logout
         binding.btnLogout.setOnClickListener(v -> showLogoutDialog());
-    }
 
-    // ── Account rows ──────────────────────────────────────────────────────────
-
-    private void setupAccountRows() {
-        binding.rowRateApp.setOnClickListener(v ->
-                Toast.makeText(requireContext(),
-                        "Thank you for your support! ⭐",
-                        Toast.LENGTH_SHORT).show());
-
-        binding.rowPrivacy.setOnClickListener(v ->
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Privacy Policy")
-                        .setMessage("RecipeApp collects only the data necessary to " +
-                                "provide the service: your email, display name, recipes " +
-                                "you create, and your shopping list.\n\n" +
-                                "We do not sell your data to third parties.")
-                        .setPositiveButton("OK", null)
-                        .show());
-
-        binding.rowDeleteAccount.setOnClickListener(v ->
-                showDeleteAccountDialog());
+        // Delete account
+        binding.rowDeleteAccount.setOnClickListener(v -> showDeleteAccountDialog());
     }
 
     // ── Dialogs ───────────────────────────────────────────────────────────────
@@ -418,8 +399,7 @@ public class ProfileFragment extends Fragment {
                                 Toast.makeText(requireContext(),
                                         "Account deleted",
                                         Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(requireContext(),
-                                        LoginActivity.class));
+                                startActivity(new Intent(requireContext(), LoginActivity.class));
                                 requireActivity().finish();
                             })
                             .addOnFailureListener(e ->
